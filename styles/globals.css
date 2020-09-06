@@ -14,3 +14,17 @@ a {
 * {
   box-sizing: border-box;
 }
+.search{
+
+  text-align: center;
+}
+.search input{
+  padding: 1% 2%;
+}
+
+.btn{
+  padding: 1%;
+}
+.text_center{
+  text-align: center;
+}

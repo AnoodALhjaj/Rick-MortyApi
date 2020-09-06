@@ -1,65 +1,119 @@
 import Head from 'next/head'
+import Fetch from "isomorphic-unfetch"
 import styles from '../styles/Home.module.css'
+import Link from "next/link"
+import { useState, useEffect } from 'react';
+const defaultEndpoint = `https://rickandmortyapi.com/api/character/`;
 
-export default function Home() {
-  return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+export async function getServerSideProps() {
+  const res = await fetch(defaultEndpoint)
+  const data = await res.json();
+  return {
+    props: {
+      data
+    }
+  }
+}
+//const { results = [] } = data;
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+export default  function Home({data}){
+  const {info, results: defaultResults = []} = data;
+  const [results,updateResults]=useState(defaultResults);
+  const [page, updatePage] = useState({
+    ...info,
+    current: defaultEndpoint
+  });
+  const { current } = page;
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
+useEffect(() => {
+  if ( current === defaultEndpoint ) return;
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+  async function request() {
+    const res = await fetch(current)
+    const nextData = await res.json();
 
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
+    updatePage({
+      current,
+      ...nextData.info
+    });
 
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
+    if ( !nextData.info?.prev ) {
+      updateResults(nextData.results);
+      return;
+    }
 
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
+    updateResults(prev => {
+      return [
+        ...prev,
+        ...nextData.results
+      ]
+    });
+  }
 
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
-    </div>
+  request();
+}, [current]);
+
+function handlerResult(){
+  updatePage(prev=>{
+    return{
+    ...prev,
+    current:page?.next
+    }
+  }
   )
 }
+function handleSearch(e){
+e.preventDefault();
+const { currentTarget = {} } = e;
+const fields = Array.from(currentTarget?.elements);//e= all form element we have which is input and Button
+
+const fieldQuery = fields.find(field => field.name === 'query');//input name value
+
+const value = fieldQuery.value || '';
+
+const endpoint = `https://rickandmortyapi.com/api/character/?name=${value}`;
+
+updatePage({
+  current: endpoint
+});
+}
+  //console.log('data',data)
+  return(<div className={styles.container}>
+<div>
+
+<div className={styles.card}>
+<h1 className="text_center">Rick and Morty</h1>
+<form className="search" onSubmit={handleSearch}>
+  <input name="query" type="search" />
+  <button  className="btn">Search</button>
+</form>
+</div>
+<div className={styles.grid}>
+
+{results.map(result=>{
+  const {id,name, image}=result;
+  return(
+
+    <ul key={id}  className={styles.card}>
+    <Link href="/character/[id]" as={`/character/${id}`} ><a><h3>{ name }</h3>  </a>
+    </Link>
+  <img src={ image } className="Mcimg"/>
+
+  </ul>
+
+  )
+})
+}
+ <button className={styles.card} onClick={handlerResult}>ReadMore</button>
+  
+
+</div>
+</div>  
+</div>
+)
+}
+
+  
+ 
+
+

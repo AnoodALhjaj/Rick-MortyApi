@@ -1,0 +1,14 @@
+
+const Home = (props) => (
+
+    <div>
+    <p>{props.prop.bpi.USD.symbol}</p>
+     </div>
+   );
+  Home.getInitialProps=async function(){
+    const res=await fetch('https://rickandmortyapi.com/api/character/');
+    const dat=await res.json();
+    return{
+      prop:dat
+    };
+  }
